@@ -76,6 +76,7 @@ export default function QuizScreen() {
   const [toast, setToast] = useState<string | null>(null);
   const [xpAnim] = useState(new Animated.Value(0));
   const [timeLeft, setTimeLeft] = useState(60);
+  const [timerPaused, setTimerPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Calculate preview XP for current question
@@ -98,7 +99,7 @@ export default function QuizScreen() {
 
   // Timer: 60 seconds per question
   useEffect(() => {
-    if (result) {
+    if (result || timerPaused) {
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
@@ -115,7 +116,7 @@ export default function QuizScreen() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [question.position, result]);
+  }, [question.position, result, timerPaused]);
 
   // Auto-submit when timer runs out
   useEffect(() => {
@@ -278,6 +279,9 @@ export default function QuizScreen() {
           </Text>
         </View>
 
+        {/* Everything below top bar — shifted down 10px */}
+        <View style={{ position: 'absolute', top: 10 * s, left: 0, right: 0, bottom: 0 }}>
+
         {/* Timer — left of category badge */}
         <View
           style={{
@@ -304,6 +308,19 @@ export default function QuizScreen() {
             {timeLeft}
           </Text>
         </View>
+
+        {/* Invisible pause button — below timer (testing) */}
+        <TouchableOpacity
+          onPress={() => setTimerPaused((p) => !p)}
+          style={{
+            position: 'absolute',
+            left: (58 - 15) * s,
+            top: (CATEGORY_BADGE.y + 3 + 3 + CATEGORY_BADGE.h) * s,
+            width: 150 * s,
+            height: 40 * s,
+          }}
+          activeOpacity={1}
+        />
 
         {/* Category badge */}
         <View style={r(CATEGORY_BADGE)} className="items-center justify-center">
@@ -370,7 +387,6 @@ export default function QuizScreen() {
               flexGrow: 1,
               justifyContent: 'center',
               alignItems: 'center',
-              paddingHorizontal: QUESTION_BOX.w * s * 0.08,
             }}
             showsVerticalScrollIndicator={false}
             bounces={false}
@@ -599,8 +615,8 @@ export default function QuizScreen() {
           <View
             style={{
               position: 'absolute',
-              left: XP_PANEL.x * s,
-              top: XP_PANEL.y * s,
+              left: XP_PANEL.x * s - 7,
+              top: XP_PANEL.y * s + 17,
               width: XP_PANEL.w * s,
               height: XP_PANEL.h * s,
               flexDirection: 'row',
@@ -612,8 +628,8 @@ export default function QuizScreen() {
               <Text
                 style={{
                   fontFamily: 'Georgia',
-                  fontSize: Math.min(22, 20 * s),
-                  color: 'rgba(212, 175, 55, 0.6)',
+                  fontSize: Math.min(49, 45 * s),
+                  color: 'rgba(212, 175, 55, 1)',
                   textShadowColor: 'rgba(0, 0, 0, 0.4)',
                   textShadowOffset: { width: 1, height: 1 },
                   textShadowRadius: 2,
@@ -638,6 +654,8 @@ export default function QuizScreen() {
             </View>
           </View>
         )}
+
+        </View>{/* end shifted container */}
 
         {/* XP Popup */}
         <Animated.View

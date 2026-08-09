@@ -72,6 +72,49 @@ const tipPositions: Record<number, { bottom: number; left: number; right: number
   8: { bottom: 152, left: 35, right: 35, fontSize: 12 },
 };
 
+// Per-grid HUD positioning (top stats + bottom buttons)
+const hudPositions: Record<number, {
+  lotus: { top: number; left: number };
+  steps: { top: number; left: number };
+  coins: { top: number; right: number; width: number };
+  restart: { bottom: number; left: number };
+  hint: { bottom: number; left: number };
+  undo: { bottom: number; right: number };
+}> = {
+  5: {
+    lotus: { top: 200, left: 85 },
+    steps: { top: 200, left: 194 },
+    coins: { top: 200, right: 36, width: 60 },
+    restart: { bottom: 30, left: 43 },
+    hint: { bottom: 30, left: 168 },
+    undo: { bottom: 30, right: 48 },
+  },
+  6: {
+    lotus: { top: 200, left: 85 },
+    steps: { top: 200, left: 194 },
+    coins: { top: 200, right: 36, width: 60 },
+    restart: { bottom: 30, left: 43 },
+    hint: { bottom: 30, left: 168 },
+    undo: { bottom: 30, right: 48 },
+  },
+  7: {
+    lotus: { top: 200, left: 85 },
+    steps: { top: 200, left: 194 },
+    coins: { top: 200, right: 36, width: 60 },
+    restart: { bottom: 30, left: 43 },
+    hint: { bottom: 30, left: 168 },
+    undo: { bottom: 30, right: 48 },
+  },
+  8: {
+    lotus: { top: 200, left: 85 },
+    steps: { top: 200, left: 190 },
+    coins: { top: 200, right: 38, width: 60 },
+    restart: { bottom: 30, left: 43 },
+    hint: { bottom: 30, left: 168 },
+    undo: { bottom: 30, right: 48 },
+  },
+};
+
 type RoyalElephantRoute = RouteProp<RootStackParamList, 'RoyalElephant'>;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -333,7 +376,7 @@ export default function RoyalElephantScreen() {
           />
 
           {/* Stats above board */}
-          <View style={{ position: 'absolute', top: 200 * s, left: 85 * s }}>
+          <View style={{ position: 'absolute', top: hudPositions[level.rows].lotus.top * s, left: hudPositions[level.rows].lotus.left * s }}>
             <Text style={{ fontFamily: 'Cinzel', fontSize: 18 * s, color: '#D4AF37', textShadowColor: 'rgba(0, 0, 0, 0.5)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 }}>
               {gameState.collectedLotus.length}/{level.lotus.length}
             </Text>
@@ -346,12 +389,12 @@ export default function RoyalElephantScreen() {
               {level.name}
             </Text>
           </View>
-          <View style={{ position: 'absolute', top: 200 * s, left: 190  *s, right: 0 }}>
+          <View style={{ position: 'absolute', top: hudPositions[level.rows].steps.top * s, left: hudPositions[level.rows].steps.left * s }}>
             <Text style={{ fontFamily: 'Cinzel', fontSize: 18 * s, color: '#D4AF37', textShadowColor: 'rgba(0, 0, 0, 0.5)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2, marginLeft: 14 }}>
               {gameState.moves}/{level.parMoves}
             </Text>
           </View>
-              <View style={{ position: 'absolute', top: 200 * s, right: 38 * s, width: 60 * s, alignItems: 'center' }}>
+              <View style={{ position: 'absolute', top: hudPositions[level.rows].coins.top * s, right: hudPositions[level.rows].coins.right * s, width: hudPositions[level.rows].coins.width * s, alignItems: 'center' }}>
             <Text style={{ fontFamily: 'Cinzel', fontSize: 18 * s, color: '#D4AF37', textShadowColor: 'rgba(0, 0, 0, 0.5)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2, textAlign: 'center' }}>
               {gameState.collectedCoins.length}/{level.coins.length}
             </Text>
@@ -381,17 +424,17 @@ export default function RoyalElephantScreen() {
           {/* Bottom buttons: Restart (left), Hint (middle), Undo (right) — separate */}
           <TouchableOpacity
             onPress={handleRestart}
-            style={{ position: 'absolute', bottom: 30 * s, left: 43 * s, width: 90 * s, height: 80 * s }}
+            style={{ position: 'absolute', bottom: hudPositions[level.rows].restart.bottom * s, left: hudPositions[level.rows].restart.left * s, width: 90 * s, height: 80 * s }}
             activeOpacity={1}
           />
           <TouchableOpacity
             onPress={handleHint}
-            style={{ position: 'absolute', bottom: 30 * s, left: 168 * s, width: 90 * s, height: 80 * s }}
+            style={{ position: 'absolute', bottom: hudPositions[level.rows].hint.bottom * s, left: hudPositions[level.rows].hint.left * s, width: 90 * s, height: 80 * s }}
             activeOpacity={1}
           />
           <TouchableOpacity
             onPress={handleUndo}
-            style={{ position: 'absolute', bottom: 30 * s, right: 48 * s, width: 90 * s, height: 80 * s }}
+            style={{ position: 'absolute', bottom: hudPositions[level.rows].undo.bottom * s, right: hudPositions[level.rows].undo.right * s, width: 90 * s, height: 80 * s }}
             activeOpacity={1}
           />
 
@@ -426,6 +469,10 @@ export default function RoyalElephantScreen() {
           parMoves={level.parMoves}
           allLotusCollected={gameState.collectedLotus.length >= level.lotus.length}
           allCoinsCollected={gameState.collectedCoins.length >= level.coins.length}
+          lotusesCollected={gameState.collectedLotus.length}
+          totalLotuses={level.lotus.length}
+          coinsCollected={gameState.collectedCoins.length}
+          totalCoins={level.coins.length}
           xpEarned={xpEarned}
           coinsEarned={coinsEarned}
           onNext={handleNextLevel}
