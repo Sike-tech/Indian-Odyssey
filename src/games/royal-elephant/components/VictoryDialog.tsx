@@ -1,6 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Image, useWindowDimensions } from 'react-native';
 import { Icon } from '../../../components/ui/Icon';
+
+const PNG_WIDTH = 700;
+const PNG_HEIGHT = 900;
 
 interface VictoryDialogProps {
   levelNumber: number;
@@ -27,72 +30,136 @@ export function VictoryDialog({
   onRestart,
   onHome,
 }: VictoryDialogProps) {
+  const { width: sw } = useWindowDimensions();
+  const s = sw / PNG_WIDTH;
   const stars = allLotusCollected && allCoinsCollected && moves <= parMoves ? 3 : allLotusCollected && moves <= parMoves ? 2 : 1;
 
   return (
-    <View className="absolute inset-0 items-center justify-center bg-black/60 z-50">
-      <View className="bg-midnight-900 border border-royal/30 rounded-2xl px-8 py-8 mx-6 items-center shadow-card">
-        {/* Title */}
-        <Text className="text-royal font-bold text-2xl mb-2">Victory!</Text>
-        <Text className="text-royal-100/60 text-sm mb-4">
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+      {/* Backdrop */}
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)' }} />
+
+      {/* Dialog PNG */}
+      <Image
+        source={require('../../../../assets/victory-dialog.png')}
+        style={{ width: PNG_WIDTH * s, height: PNG_HEIGHT * s }}
+        resizeMode="contain"
+      />
+
+      {/* Overlay content */}
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+        {/* Level complete text */}
+        <Text style={{
+          fontFamily: 'Cinzel',
+          fontSize: 22 * s,
+          color: '#D4AF37',
+          fontWeight: 'bold',
+          textShadowColor: 'rgba(0,0,0,0.6)',
+          textShadowOffset: { width: 1, height: 2 },
+          textShadowRadius: 3,
+          marginTop: -80 * s,
+        }}>
           Level {levelNumber} Complete
         </Text>
 
         {/* Stars */}
-        <View className="flex-row mb-4">
+        <View style={{ flexDirection: 'row', marginTop: 20 * s }}>
           {[1, 2, 3].map((i) => (
             <Icon
               key={i}
               name="star"
-              size={36}
+              size={40 * s}
               color={i <= stars ? '#D4AF37' : '#2A2A3A'}
             />
           ))}
         </View>
 
-        {/* Stats */}
-        <View className="flex-row mb-2">
-          <Text className="text-royal-100/70 text-sm">Moves: </Text>
-          <Text className="text-royal-50 text-sm font-semibold">
-            {moves} / {parMoves}
-          </Text>
-        </View>
+        {/* Moves */}
+        <Text style={{
+          fontFamily: 'Georgia',
+          fontSize: 16 * s,
+          color: 'rgba(212, 175, 55, 0.8)',
+          marginTop: 15 * s,
+        }}>
+          Moves: {moves} / {parMoves}
+        </Text>
 
-        <View className="flex-row mb-2">
-          <Icon name="star" size={16} color="#D4AF37" />
-          <Text className="text-royal-50 text-sm ml-1 font-semibold">
-            +{xpEarned} XP
-          </Text>
-        </View>
+        {/* XP */}
+        <Text style={{
+          fontFamily: 'Georgia',
+          fontSize: 16 * s,
+          color: '#D4AF37',
+          marginTop: 10 * s,
+        }}>
+          +{xpEarned} XP
+        </Text>
 
-        <View className="flex-row mb-6">
-          <Icon name="coin" size={16} color="#D4AF37" />
-          <Text className="text-royal-50 text-sm ml-1 font-semibold">
-            +{coinsEarned} Coins
-          </Text>
-        </View>
+        {/* Coins */}
+        <Text style={{
+          fontFamily: 'Georgia',
+          fontSize: 16 * s,
+          color: '#D4AF37',
+          marginTop: 6 * s,
+        }}>
+          +{coinsEarned} Coins
+        </Text>
 
         {/* Buttons */}
-        <View className="flex-row gap-3">
+        <View style={{ flexDirection: 'row', marginTop: 30 * s, gap: 15 * s }}>
           <TouchableOpacity
             onPress={onRestart}
-            className="bg-midnight-700 border border-royal/20 rounded-xl px-5 py-3"
+            activeOpacity={0.8}
+            style={{
+              width: 50 * s,
+              height: 50 * s,
+              borderRadius: 25 * s,
+              backgroundColor: 'rgba(8, 27, 58, 0.8)',
+              borderWidth: 1,
+              borderColor: 'rgba(212, 175, 55, 0.3)',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            <Icon name="restart" size={20} color="#8B9DC3" />
+            <Icon name="restart" size={22 * s} color="#8B9DC3" />
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={onHome}
-            className="bg-midnight-700 border border-royal/20 rounded-xl px-5 py-3"
+            activeOpacity={0.8}
+            style={{
+              width: 50 * s,
+              height: 50 * s,
+              borderRadius: 25 * s,
+              backgroundColor: 'rgba(8, 27, 58, 0.8)',
+              borderWidth: 1,
+              borderColor: 'rgba(212, 175, 55, 0.3)',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            <Icon name="home" size={20} color="#8B9DC3" />
+            <Icon name="home" size={22 * s} color="#8B9DC3" />
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={onNext}
-            className="bg-royal border border-royal-400 rounded-xl px-8 py-3"
+            activeOpacity={0.8}
+            style={{
+              paddingHorizontal: 30 * s,
+              height: 50 * s,
+              borderRadius: 25 * s,
+              backgroundColor: '#D4AF37',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            <Text className="text-midnight font-bold text-sm">NEXT</Text>
+            <Text style={{
+              fontFamily: 'Georgia',
+              fontSize: 16 * s,
+              fontWeight: 'bold',
+              color: '#081B3A',
+            }}>
+              NEXT
+            </Text>
           </TouchableOpacity>
         </View>
       </View>

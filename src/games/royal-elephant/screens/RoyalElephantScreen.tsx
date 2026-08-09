@@ -53,15 +53,23 @@ const gridStyles: Record<number, {
     tileWidthFactor: 0.93,
   },
   7: {
-    container: { top: 264, left: 0, right: 0, alignItems: 'center' },
+    container: { top: 264, left: 2, right: 0, alignItems: 'center' },
     tileHeightFactor: 1.08,
-    tileWidthFactor: 0.93,
+    tileWidthFactor: 0.923,
   },
   8: {
     container: { top: 265, left: 10, right: 0, alignItems: 'center' },
     tileHeightFactor: 1.03,
     tileWidthFactor: 0.95,
   },
+};
+
+// Per-grid tip positioning
+const tipPositions: Record<number, { bottom: number; left: number; right: number; fontSize: number }> = {
+  5: { bottom: 152, left: 35, right: 35, fontSize: 12 },
+  6: { bottom: 157, left: 35, right: 35, fontSize: 12 },
+  7: { bottom: 155, left: 35, right: 35, fontSize: 12 },
+  8: { bottom: 152, left: 35, right: 35, fontSize: 12 },
 };
 
 type RoyalElephantRoute = RouteProp<RootStackParamList, 'RoyalElephant'>;
@@ -343,7 +351,7 @@ export default function RoyalElephantScreen() {
               {gameState.moves}/{level.parMoves}
             </Text>
           </View>
-          <View style={{ position: 'absolute', top: 200 * s, right: 38 * s, width: 60 * s, alignItems: 'center' }}>
+              <View style={{ position: 'absolute', top: 200 * s, right: 38 * s, width: 60 * s, alignItems: 'center' }}>
             <Text style={{ fontFamily: 'Cinzel', fontSize: 18 * s, color: '#D4AF37', textShadowColor: 'rgba(0, 0, 0, 0.5)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2, textAlign: 'center' }}>
               {gameState.collectedCoins.length}/{level.coins.length}
             </Text>
@@ -389,8 +397,20 @@ export default function RoyalElephantScreen() {
 
           {/* Level tip */}
           {level.tip && (
-            <View style={{ position: 'absolute', bottom: 140 * s, left: 35 * s, right: 35 * s, alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'Cinzel', fontSize: 12 * s, color: '#D4AF37', textAlign: 'center', lineHeight: 16 * s }}>
+            <View style={{
+              position: 'absolute',
+              bottom: tipPositions[level.rows].bottom * s,
+              left: tipPositions[level.rows].left * s,
+              right: tipPositions[level.rows].right * s,
+              alignItems: 'center',
+            }}>
+              <Text style={{
+                fontFamily: 'Cinzel',
+                fontSize: tipPositions[level.rows].fontSize * s,
+                color: '#D4AF37',
+                textAlign: 'center',
+                lineHeight: 16 * s,
+              }}>
                 {level.tip}
               </Text>
             </View>
