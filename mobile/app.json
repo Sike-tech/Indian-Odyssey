@@ -24,8 +24,7 @@
     "web": {
       "favicon": "./assets/app-icon-circular.png",
       "backgroundColor": "#081B38",
-      "bundler": "metro",
-      "output": "static"
+      "bundler": "metro"
     },
     "plugins": [
       "expo-splash-screen",
