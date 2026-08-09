@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Bharat Gyaan",
+    "slug": "bharat-gyaan",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/app-icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#081B38",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bharatgyaan.app"
+    },
+    "android": {
+      "package": "com.bharatgyaan.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#081B38",
+        "foregroundImage": "./assets/app-icon.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/app-icon.png"
+      },
+      "predictiveBackGestureEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/app-icon-circular.png",
+      "backgroundColor": "#081B38",
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-splash-screen",
+      "expo-asset"
+    ]
+  }
+}
