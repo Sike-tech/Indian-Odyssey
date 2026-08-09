@@ -85,6 +85,9 @@ export default function ResultScreen() {
             <Text className="text-royal-100 text-xl font-bold" style={{ fontFamily: 'Georgia' }}>
               +{summary.xpEarned} XP earned
             </Text>
+            <Text className="text-royal-100 text-xl font-bold mt-2" style={{ fontFamily: 'Georgia' }}>
+              +{summary.coinsEarned} Coins earned
+            </Text>
             <Text className="text-white/80 text-sm mt-2">
               Best streak this game: {summary.bestStreak}
             </Text>

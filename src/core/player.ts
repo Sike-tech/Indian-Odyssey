@@ -3,6 +3,7 @@ import { levelForXp, titleForLevel } from '../data/achievements';
 
 export const DEFAULT_PROFILE: PlayerProfileData = {
   totalXp: 0,
+  coins: 10000,
   totalAnswered: 0,
   totalCorrect: 0,
   bestStreak: 0,
@@ -26,6 +27,14 @@ export class PlayerProfile {
 
   set totalXp(value: number) {
     this.data.totalXp = value;
+  }
+
+  get coins(): number {
+    return this.data.coins;
+  }
+
+  addCoins(amount: number): void {
+    this.data.coins = Math.max(0, this.data.coins + amount);
   }
 
   get level(): number {
@@ -123,6 +132,7 @@ export class PlayerProfile {
     const d = data as Partial<PlayerProfileData>;
     return new PlayerProfile({
       totalXp: d.totalXp ?? 0,
+      coins: d.coins ?? 0,
       totalAnswered: d.totalAnswered ?? 0,
       totalCorrect: d.totalCorrect ?? 0,
       bestStreak: d.bestStreak ?? 0,

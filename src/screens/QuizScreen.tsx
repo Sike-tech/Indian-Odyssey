@@ -1,44 +1,89 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
   Animated,
-  Dimensions,
+  Image,
+  ScrollView,
+  useWindowDimensions,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { RootStackParamList, CategoryKey, QuestionView, AnswerResult } from '../types';
+import { RootStackParamList, QuestionView, AnswerResult } from '../types';
 import { useProfile } from '../hooks/useProfile';
-import { QuizSession } from '../core/engine';
+import { QuizSession, STREAK_STEP, STREAK_CAP, COINS_PER_CORRECT } from '../core/engine';
+import { FIFTY_FIFTY_COST, SKIP_COST } from '../core/engine';
+import { DIFFICULTY_XP } from '../data/questions';
 import { CATEGORIES } from '../data/questions';
 import { titleForLevel } from '../data/achievements';
 import { Icon } from '../components/ui/Icon';
-import { Card, ProgressBar } from '../components/ui';
-
-const { width } = Dimensions.get('window');
+import {
+  PNG_WIDTH,
+  PNG_HEIGHT,
+  BACK_BUTTON,
+  COIN_BAR,
+  CATEGORY_BADGE,
+  QUESTION_BOX,
+  ANSWER_A,
+  ANSWER_B,
+  ANSWER_C,
+  ANSWER_D,
+  SELECT_A,
+  SELECT_B,
+  SELECT_C,
+  SELECT_D,
+  GLOW_A,
+  GLOW_B,
+  GLOW_C,
+  GLOW_D,
+  OPT_GLOW_A,
+  OPT_GLOW_B,
+  OPT_GLOW_C,
+  OPT_GLOW_D,
+  SUBMIT,
+  HINT,
+  SKIP,
+  XP_PANEL,
+} from '../data/QuestionLayout';
 
 type QuizRoute = RouteProp<RootStackParamList, 'Quiz'>;
 type QuizNav = NativeStackNavigationProp<RootStackParamList>;
 
-const OPTION_LABELS = ['A', 'B', 'C', 'D'];
+const ANSWER_RECTS = [ANSWER_A, ANSWER_B, ANSWER_C, ANSWER_D];
+const SELECT_RECTS = [SELECT_A, SELECT_B, SELECT_C, SELECT_D];
+
+function formatCoins(n: number): string {
+  if (n >= 100000) return `${Math.round(n / 1000)}k`;
+  if (n >= 10000) return `${Math.round(n / 1000)}k`;
+  if (n >= 1000) return `${n / 1000}`.replace(/\.0$/, '') + 'k';
+  return String(n);
+}
 
 export default function QuizScreen() {
   const navigation = useNavigation<QuizNav>();
   const route = useRoute<QuizRoute>();
   const { profile, save, refresh } = useProfile();
+  const { width: sw } = useWindowDimensions();
+  const s = sw / PNG_WIDTH;
+  const imgH = Math.round(sw * (PNG_HEIGHT / PNG_WIDTH));
 
   const [session] = useState(() => new QuizSession(profile, route.params?.category));
   const [question, setQuestion] = useState<QuestionView>(() => session.currentQuestion());
   const [result, setResult] = useState<AnswerResult | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
   const [removed, setRemoved] = useState<Set<number>>(new Set());
   const [toast, setToast] = useState<string | null>(null);
   const [xpAnim] = useState(new Animated.Value(0));
+  const [timeLeft, setTimeLeft] = useState(60);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const scrollRef = useRef<ScrollView>(null);
+  // Calculate preview XP for current question
+  const previewXp = (() => {
+    const base = DIFFICULTY_XP[question.difficulty] ?? 10;
+    const mult = 1 + STREAK_STEP * Math.min(session.streak, STREAK_CAP);
+    return Math.round(base * mult);
+  })();
 
   useEffect(() => {
     navigation.setOptions({ gestureEnabled: false });
@@ -51,33 +96,70 @@ export default function QuizScreen() {
     }
   }, [toast]);
 
+  // Timer: 60 seconds per question
+  useEffect(() => {
+    if (result) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+    setTimeLeft(60);
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [question.position, result]);
+
+  // Auto-submit when timer runs out
+  useEffect(() => {
+    if (timeLeft === 0 && !result) {
+      if (selected !== null) {
+        handleTimeout();
+      } else {
+        handleTimeout();
+      }
+    }
+  }, [timeLeft, result]);
+
+  const handleTimeout = () => {
+    try {
+      const res = session.answer(selected ?? 0, true);
+      setResult(res);
+      setToast(null);
+    } catch {
+      finishGame();
+    }
+  };
+
   const showXpPopup = useCallback((amount: number) => {
     xpAnim.setValue(0);
     Animated.sequence([
-      Animated.timing(xpAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(xpAnim, {
-        toValue: 0,
-        duration: 400,
-        delay: 600,
-        useNativeDriver: true,
-      }),
+      Animated.timing(xpAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(xpAnim, { toValue: 0, duration: 400, delay: 600, useNativeDriver: true }),
     ]).start();
   }, [xpAnim]);
 
-  const handleAnswer = (index: number) => {
+  const handleSelect = (index: number) => {
     if (result || removed.has(index)) return;
+    setSelected(index);
+  };
+
+  const handleSubmit = () => {
+    if (selected === null || result) return;
     try {
-      const res = session.answer(index);
+      const res = session.answer(selected);
       setResult(res);
       if (res.xpGained > 0) showXpPopup(res.xpGained);
       res.levelUps.forEach((lvl) => {
         setToast(`Level Up! You are now Level ${lvl} - '${titleForLevel(lvl)}'!`);
       });
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 200);
     } catch (e) {
       setToast((e as Error).message);
     }
@@ -107,9 +189,9 @@ export default function QuizScreen() {
       return;
     }
     setResult(null);
+    setSelected(null);
     setRemoved(new Set());
     setQuestion(session.currentQuestion());
-    scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
 
   const finishGame = () => {
@@ -117,284 +199,470 @@ export default function QuizScreen() {
     const summary = session.summary();
     save().then(() => {
       refresh();
-      navigation.replace('Result', {
-        summary,
-        newBadges: badges.map((b) => b.id),
-      });
+      navigation.replace('Result', { summary, newBadges: badges.map((b) => b.id) });
     });
   };
 
-  const goHome = () => {
-    navigation.replace('Home');
-  };
+  const goBack = () => navigation.replace('Home');
 
   const meta = CATEGORIES[question.category];
-  const categoryName = meta.name;
-  const categoryColor = meta.color;
 
   const optionState = (index: number) => {
     if (!result) {
+      if (selected === index) return 'selected';
       return removed.has(index) ? 'removed' : 'default';
     }
     if (index === result.correctIndex) return 'correct';
+    if (index === selected && !result.correct) return 'wrong';
     if (removed.has(index)) return 'removed';
-    return 'wrong';
+    return 'default';
   };
 
+  const r = (rect: { x: number; y: number; w: number; h: number }) => ({
+    position: 'absolute' as const,
+    left: rect.x * s,
+    top: rect.y * s,
+    width: rect.w * s,
+    height: rect.h * s,
+  });
+
   return (
-    <LinearGradient
-      colors={['#081B3A', '#030914']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      className="flex-1"
-    >
-      <SafeAreaView className="flex-1">
-        {/* HUD */}
-        <View className="px-5 pt-3 pb-2 flex-row items-center">
-          <TouchableOpacity onPress={goHome} className="p-1 -ml-1">
-            <Icon name="arrow-left" size={26} color="#D4AF37" />
-          </TouchableOpacity>
-          <Text className="text-white font-semibold text-sm ml-2 flex-1 tracking-wide">
-            Question {question.position}/{question.total}
-          </Text>
-          <View className="flex-row items-center space-x-3">
-            <View className="flex-row items-center">
-              <Icon name="star" size={18} color="#D4AF37" />
-              <Text className="text-white text-xs font-semibold ml-1">
-                {session.xpEarned}
-              </Text>
-            </View>
-            <View className="flex-row items-center">
-              <Icon
-                name="fire"
-                size={18}
-                color={session.streak >= 2 ? '#D4AF37' : '#6B581A'}
-              />
-              <Text className="text-white text-xs font-semibold ml-1">
-                {session.streak}
-              </Text>
-            </View>
-          </View>
-          <Text className="text-white/80 text-xs font-semibold ml-3">
-            Lvl {profile.level}
+    <View style={{ flex: 1, backgroundColor: '#030914' }}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={{ width: sw, position: 'relative' }}>
+          <Image
+            source={require('../../assets/question-page.png')}
+            style={{ width: sw, height: imgH }}
+          />
+
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+        {/* Back button */}
+        <TouchableOpacity
+          onPress={goBack}
+          style={{
+            position: 'absolute',
+            left: (BACK_BUTTON.cx - BACK_BUTTON.r - 24) * s,
+            top: (BACK_BUTTON.cy - BACK_BUTTON.r - 275) * s,
+            width: BACK_BUTTON.r * 2.3 * s,
+            height: BACK_BUTTON.r * 2.3 * s,
+            zIndex: 10,
+          }}
+        />
+
+        {/* Coins counter */}
+        <View
+          style={{
+            position: 'absolute',
+            left: (COIN_BAR.x + 150) * s,
+            top: (COIN_BAR.y + 40) * s,
+            width: COIN_BAR.w * s,
+            height: COIN_BAR.h * s,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: 'Cinzel',
+              fontSize: Math.min(30, 28 * s),
+              fontWeight: 'bold',
+              color: '#D4AF37',
+              textShadowColor: 'rgba(0, 0, 0, 0.5)',
+              textShadowOffset: { width: 1, height: 1 },
+              textShadowRadius: 2,
+              width: COIN_BAR.w * s,
+              textAlign: 'center',
+            }}
+          >
+            {formatCoins(profile.coins)}
           </Text>
         </View>
 
-        <ScrollView
-          ref={scrollRef}
-          className="flex-1 px-5"
-          contentContainerStyle={{ paddingBottom: 80 }}
-          showsVerticalScrollIndicator={false}
+        {/* Timer — left of category badge */}
+        <View
+          style={{
+            position: 'absolute',
+            left: (58 - 15) * s,
+            top: (CATEGORY_BADGE.y + 3 + 3) * s,
+            width: 150 * s,
+            height: CATEGORY_BADGE.h * s,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
-          <ProgressBar value={session.index} max={session.total} height={6} />
+          <Text
+            style={{
+              fontFamily: 'Georgia',
+              fontSize: Math.min(45, 42 * s),
+              color: timeLeft <= 10 ? '#ef4444' : '#D4AF37',
+              textShadowColor: 'rgba(0, 0, 0, 0.5)',
+              textShadowOffset: { width: 1, height: 1 },
+              textShadowRadius: 2,
+              textAlign: 'center',
+            }}
+          >
+            {timeLeft}
+          </Text>
+        </View>
 
-          <View className="flex-row items-center mt-2">
-            <Text style={{ color: categoryColor }} className="text-xs font-bold uppercase tracking-[2px]">
-              {categoryName}
-            </Text>
-            <Text className="text-white/30 mx-2">•</Text>
-            <Text className="text-white/50 text-xs capitalize tracking-wide">
-              {question.difficulty}
-            </Text>
-          </View>
+        {/* Category badge */}
+        <View style={r(CATEGORY_BADGE)} className="items-center justify-center">
+          <Text
+            style={{
+              fontFamily: 'Georgia',
+              fontSize: Math.min(33, 32 * s),
+              fontWeight: 'bold',
+              color: '#D4AF37',
+              textShadowColor: 'rgba(0, 0, 0, 0.6)',
+              textShadowOffset: { width: 1, height: 2 },
+              textShadowRadius: 3,
+              letterSpacing: 3,
+              textTransform: 'uppercase',
+              marginTop: 6,
+              marginLeft: 2,
+            }}
+          >
+            {meta.name}
+          </Text>
+        </View>
 
-          {/* Question Card */}
-          <Card className="mt-4 p-5 rounded-[24px]">
-            <Text className="text-white text-lg leading-6 font-semibold" style={{ fontFamily: 'Georgia' }}>
+        {/* Question counter */}
+        <View
+          style={{
+            position: 'absolute',
+            left: (CATEGORY_BADGE.x + CATEGORY_BADGE.w + 102) * s,
+            top: (CATEGORY_BADGE.y + 3) * s,
+            width: 60 * s,
+            height: CATEGORY_BADGE.h * s,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: 'Georgia',
+              fontSize: Math.min(30, 28 * s),
+              color: '#D4AF37',
+              textShadowColor: 'rgba(0, 0, 0, 0.5)',
+              textShadowOffset: { width: 1, height: 1 },
+              textShadowRadius: 2,
+              textAlign: 'center',
+            }}
+          >
+            {question.position}/{question.total}
+          </Text>
+        </View>
+
+        {/* Question text — scrollable */}
+          <View
+            style={{
+              position: 'absolute',
+              left: QUESTION_BOX.x * s,
+              top: QUESTION_BOX.y * s,
+              width: QUESTION_BOX.w * s,
+              height: QUESTION_BOX.h * s,
+              overflow: 'hidden',
+            }}
+          >
+          <ScrollView
+            nestedScrollEnabled
+            contentContainerStyle={{
+              flexGrow: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+              paddingHorizontal: QUESTION_BOX.w * s * 0.08,
+            }}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            <Text
+              style={{
+              fontFamily: 'Cinzel',
+                fontSize: Math.min(39, 36 * s),
+                textAlign: 'center',
+                lineHeight: 30,
+                color: '#FFEA00',
+                textShadowColor: 'rgba(0, 0, 0, 0.6)',
+                textShadowOffset: { width: 1, height: 2 },
+                textShadowRadius: 3,
+                letterSpacing: 0.5,
+              }}
+            >
               {question.text}
             </Text>
-          </Card>
+          </ScrollView>
+        </View>
 
-          {/* Options */}
-          <View className="mt-4 space-y-3">
-            {question.options.map((opt, idx) => {
-              const state = optionState(idx);
-              const isDefault = state === 'default';
-              const isCorrect = state === 'correct';
-              const isWrong = state === 'wrong';
-              const isRemoved = state === 'removed';
+        {/* Glow buttons — soft center glow when option selected */}
+        {[GLOW_A, GLOW_B, GLOW_C, GLOW_D].map((g, idx) => {
+          const isActive = selected === idx;
+          const state = optionState(idx);
+          const isCorrect = state === 'correct';
+          const isWrong = state === 'wrong';
+          const r = g.r * s;
 
-              return (
-                <TouchableOpacity
-                  key={idx}
-                  activeOpacity={isDefault ? 0.8 : 1}
-                  onPress={() => handleAnswer(idx)}
-                  disabled={!isDefault}
-                  className="flex-row items-center"
-                >
-                  <View
-                    className={[
-                      'flex-1 flex-row items-center rounded-2xl border px-4 py-3.5',
-                      isCorrect
-                        ? 'bg-green-900/30 border-green-500/50'
-                        : isWrong
-                        ? 'bg-red-900/25 border-red-500/35'
-                        : isRemoved
-                        ? 'bg-midnight-600/40 border-white/5 opacity-60'
-                        : 'bg-midnight-500/90 border-royal/20',
-                    ].join(' ')}
-                    style={isDefault ? {
-                      shadowColor: '#000000',
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.25,
-                      shadowRadius: 12,
-                      elevation: 6,
-                    } : undefined}
-                  >
-                    <View
-                      className={[
-                        'w-8 h-8 rounded-full items-center justify-center mr-3 border',
-                        isCorrect
-                          ? 'bg-green-600 border-green-400'
-                          : isWrong
-                          ? 'bg-red-600 border-red-400'
-                          : isRemoved
-                          ? 'bg-midnight-300 border-white/10'
-                          : 'bg-gradient-to-br from-royal-200 to-royal-500 border-royal-100',
-                      ].join(' ')}
-                    >
-                      <Text
-                        className={[
-                          'text-sm font-bold',
-                          isDefault || isRemoved ? 'text-midnight-900' : 'text-white',
-                        ].join(' ')}
-                      >
-                        {isRemoved ? '—' : OPTION_LABELS[idx]}
-                      </Text>
-                    </View>
-                    <Text
-                      className={[
-                        'flex-1 text-[15px] leading-5',
-                        isRemoved ? 'text-white/30' : 'text-white/90',
-                      ].join(' ')}
-                    >
-                      {isRemoved ? '' : opt}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          const glowColor = result
+            ? isCorrect ? '#22c55e' : isWrong ? '#ef4444' : '#D4AF37'
+            : '#D4AF37';
 
-          {/* Fact / Result Card */}
-          {result ? (
-            <Card className="mt-5 p-5 rounded-[24px]">
-              <Text
-                className={[
-                  'text-base font-bold tracking-wide',
-                  result.correct ? 'text-green-400' : 'text-red-400',
-                ].join(' ')}
-              >
-                {result.correct
-                  ? 'Correct!'
-                  : `Wrong! Correct answer: ${question.options[result.correctIndex]}`}
-              </Text>
-              <Text className="text-white/70 text-sm mt-2 leading-5">
-                Fun fact: {result.fact}
-              </Text>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={nextQuestion}
-                className="mt-4 rounded-2xl py-3.5 items-center overflow-hidden border border-royal-100/40"
+          const showGlow = result ? isActive : isActive;
+
+          return (
+            <View
+              key={`glow-${idx}`}
+              style={{
+                position: 'absolute',
+                left: (g.cx - g.r) * s,
+                top: (g.cy - g.r) * s,
+                width: r * 2,
+                height: r * 2,
+                borderRadius: r,
+                shadowColor: glowColor,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: showGlow ? 1 : 0,
+                shadowRadius: showGlow ? r * 1.12 : 0,
+                elevation: showGlow ? 14 : 0,
+              }}
+            />
+          );
+        })}
+
+        {/* Option glow buttons — capsule-right shape */}
+        {[OPT_GLOW_A, OPT_GLOW_B, OPT_GLOW_C, OPT_GLOW_D].map((rect, idx) => {
+          const isActive = selected === idx;
+          const state = optionState(idx);
+          const isCorrect = state === 'correct';
+          const isWrong = state === 'wrong';
+
+          const glowColor = result
+            ? isCorrect ? '#22c55e' : isWrong ? '#ef4444' : '#D4AF37'
+            : '#D4AF37';
+
+          const showGlow = result ? (isCorrect || isWrong) : isActive;
+
+          return (
+            <View
+              key={`optglow-${idx}`}
+              style={{
+                position: 'absolute',
+                left: rect.x * s,
+                top: rect.y * s,
+                width: rect.w * s,
+                height: rect.h * s,
+                borderTopRightRadius: 46 * s,
+                borderBottomRightRadius: 46 * s,
+                borderTopLeftRadius: 46 * s,
+                borderBottomLeftRadius: 46 * s,
+                borderWidth: 0,
+                shadowColor: glowColor,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: showGlow ? 1 : 0,
+                shadowRadius: showGlow ? 28 : 0,
+                elevation: showGlow ? 14 : 0,
+              }}
+            />
+          );
+        })}
+
+        {/* Select buttons — invisible buttons to the left of each option */}
+        {SELECT_RECTS.map((rect, idx) => (
+          <TouchableOpacity
+            key={`select-${idx}`}
+            activeOpacity={1}
+            onPress={() => handleSelect(idx)}
+            disabled={!!result}
+            style={{
+              ...r(rect),
+              borderTopLeftRadius: 35 * s,
+              borderBottomLeftRadius: 35 * s,
+            }}
+          />
+        ))}
+
+        {/* Answer options */}
+        {question.options.map((opt, idx) => {
+          const rect = ANSWER_RECTS[idx];
+          const state = optionState(idx);
+          const isDefault = state === 'default';
+          const isSelected = state === 'selected';
+          const isCorrect = state === 'correct';
+          const isWrong = state === 'wrong';
+          const isRemoved = state === 'removed';
+
+          return (
+            <TouchableOpacity
+              key={idx}
+              activeOpacity={isDefault || isSelected ? 0.8 : 1}
+              onPress={() => handleSelect(idx)}
+              disabled={!!result || isRemoved}
+              style={r(rect)}
+            >
+              <View
                 style={{
-                  backgroundColor: '#D4AF37',
-                  shadowColor: '#D4AF37',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 14,
-                  elevation: 8,
+                  flex: 1,
+                  alignItems: 'flex-start',
+                  justifyContent: 'center',
+                  paddingHorizontal: 14 * s,
                 }}
               >
-                <Text className="text-midnight-900 font-bold tracking-wider">
-                  {session.finished ? 'SEE RESULT' : 'NEXT'}
+                <Text
+                  style={{
+                    width: (ANSWER_RECTS[idx].w - 28) * s,
+              fontFamily: 'Georgia',
+                    fontSize: Math.min(35, 34 * s),
+                    color: isCorrect
+                      ? '#86efac'
+                      : isWrong
+                      ? '#fca5a5'
+                      : isRemoved
+                      ? 'rgba(255,255,255,0.15)'
+                      : '#D4AF37',
+                    textAlign: 'left',
+                    lineHeight: 38,
+                    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+                    textShadowOffset: { width: 1, height: 1 },
+                    textShadowRadius: 2,
+                    marginTop: idx === 3 ? 5 : 0,
+                  }}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.5}
+                >
+                  {opt}
                 </Text>
-              </TouchableOpacity>
-            </Card>
-          ) : null}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
 
-          {/* Bottom Spacer */}
-          <View className="h-4" />
-        </ScrollView>
+        {/* Hint button */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={handleFifty}
+          disabled={profile.coins < FIFTY_FIFTY_COST}
+          style={{
+            position: 'absolute',
+            left: (HINT.cx - HINT.r) * s,
+            top: (HINT.cy - HINT.r) * s,
+            width: HINT.r * 2 * s,
+            height: HINT.r * 2 * s,
+          }}
+        />
 
-        {/* Lifelines (fixed bottom) */}
-        {!result ? (
-          <LinearGradient
-            colors={['rgba(3,9,20,0)', 'rgba(8,27,58,0.92)', '#081B3A']}
-            locations={[0, 0.55, 1]}
-            className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-8"
+        {/* Skip button */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={handleSkip}
+          disabled={profile.coins < SKIP_COST}
+          style={{
+            position: 'absolute',
+            left: (SKIP.cx - SKIP.r) * s,
+            top: (SKIP.cy - SKIP.r) * s,
+            width: SKIP.r * 2 * s,
+            height: SKIP.r * 2 * s,
+          }}
+        />
+
+        {/* Submit / Next button */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={result ? nextQuestion : handleSubmit}
+          disabled={!result && selected === null}
+          style={r(SUBMIT)}
+        >
+          <View className="flex-1 items-center justify-center">
+            <Text
+              style={{
+                fontFamily: 'Georgia',
+                fontSize: Math.min(36, 35 * s),
+                fontWeight: 'bold',
+                color: result
+                  ? '#D4AF37'
+                  : selected !== null
+                  ? '#D4AF37'
+                  : 'rgba(255,255,255,0.25)',
+                textShadowColor: 'rgba(0, 0, 0, 0.5)',
+                textShadowOffset: { width: 1, height: 1 },
+                textShadowRadius: 2,
+                letterSpacing: 2,
+                marginTop: 5,
+                marginLeft: 4,
+              }}
+            >
+              {result ? 'NEXT' : 'SUBMIT'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* XP/Coins preview — bottom panel */}
+        {!result && (
+          <View
+            style={{
+              position: 'absolute',
+              left: XP_PANEL.x * s,
+              top: XP_PANEL.y * s,
+              width: XP_PANEL.w * s,
+              height: XP_PANEL.h * s,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-around',
+            }}
           >
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handleFifty}
-                disabled={session.lifelines.fifty <= 0}
-                className={[
-                  'flex-1 rounded-2xl py-3.5 items-center border overflow-hidden',
-                  session.lifelines.fifty > 0
-                    ? 'border-royal-100/50'
-                    : 'bg-midnight-600 border-white/10 opacity-50',
-                ].join(' ')}
-                style={
-                  session.lifelines.fifty > 0
-                    ? {
-                        backgroundColor: '#D4AF37',
-                        shadowColor: '#D4AF37',
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.25,
-                        shadowRadius: 14,
-                        elevation: 8,
-                      }
-                    : undefined
-                }
+            <View style={{ alignItems: 'center' }}>
+              <Text
+                style={{
+                  fontFamily: 'Georgia',
+                  fontSize: Math.min(22, 20 * s),
+                  color: 'rgba(212, 175, 55, 0.6)',
+                  textShadowColor: 'rgba(0, 0, 0, 0.4)',
+                  textShadowOffset: { width: 1, height: 1 },
+                  textShadowRadius: 2,
+                }}
               >
-                <Text className="text-midnight-900 font-bold tracking-wide">50 : 50 ({session.lifelines.fifty})</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handleSkip}
-                disabled={session.lifelines.skip <= 0}
-                className={[
-                  'flex-1 rounded-2xl py-3.5 items-center border overflow-hidden',
-                  session.lifelines.skip > 0
-                    ? 'bg-midnight-500 border-royal/30'
-                    : 'bg-midnight-600 border-white/10 opacity-50',
-                ].join(' ')}
-                style={
-                  session.lifelines.skip > 0
-                    ? {
-                        shadowColor: '#000000',
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.25,
-                        shadowRadius: 12,
-                        elevation: 5,
-                      }
-                    : undefined
-                }
-              >
-                <Text className="text-royal-100 font-bold tracking-wide">SKIP ({session.lifelines.skip})</Text>
-              </TouchableOpacity>
+                +{previewXp} XP
+              </Text>
             </View>
-          </LinearGradient>
-        ) : null}
+            <View style={{ alignItems: 'center' }}>
+              <Text
+                style={{
+                  fontFamily: 'Georgia',
+                  fontSize: Math.min(22, 20 * s),
+                  color: 'rgba(212, 175, 55, 0.6)',
+                  textShadowColor: 'rgba(0, 0, 0, 0.4)',
+                  textShadowOffset: { width: 1, height: 1 },
+                  textShadowRadius: 2,
+                }}
+              >
+                +25 Coins
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* XP Popup */}
         <Animated.View
           pointerEvents="none"
-          className="absolute left-0 right-0 items-center"
           style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
             top: '35%',
+            alignItems: 'center',
             opacity: xpAnim,
-            transform: [
-              {
-                translateY: xpAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, -40],
-                }),
-              },
-            ],
+            transform: [{ translateY: xpAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40] }) }],
           }}
         >
-          <Text className="text-royal-100 text-2xl font-extrabold" style={{ textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 }}>
+          <Text
+            style={{
+              fontFamily: 'Georgia',
+              fontSize: 28,
+              fontWeight: 'bold',
+              color: '#D4AF37',
+              textShadowColor: 'rgba(0, 0, 0, 0.8)',
+              textShadowOffset: { width: 1, height: 2 },
+              textShadowRadius: 5,
+            }}
+          >
             +{result?.xpGained ?? 0} XP
           </Text>
         </Animated.View>
@@ -402,10 +670,25 @@ export default function QuizScreen() {
         {/* Toast */}
         {toast ? (
           <View className="absolute bottom-24 left-5 right-5 bg-midnight-500/95 border border-royal/25 rounded-2xl px-4 py-3 shadow-card">
-            <Text className="text-royal-100 text-center text-sm font-semibold">{toast}</Text>
+            <Text
+              style={{
+                fontFamily: 'Georgia',
+                fontSize: 14,
+                fontWeight: '600',
+                color: '#D4AF37',
+                textAlign: 'center',
+                textShadowColor: 'rgba(0, 0, 0, 0.5)',
+                textShadowOffset: { width: 1, height: 1 },
+                textShadowRadius: 2,
+              }}
+            >
+              {toast}
+            </Text>
           </View>
         ) : null}
-      </SafeAreaView>
-    </LinearGradient>
+      </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 }

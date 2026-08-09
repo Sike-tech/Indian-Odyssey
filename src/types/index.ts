@@ -21,6 +21,7 @@ export interface CategoryMeta {
 
 export interface PlayerProfileData {
   totalXp: number;
+  coins: number;
   totalAnswered: number;
   totalCorrect: number;
   bestStreak: number;
@@ -84,6 +85,7 @@ export interface SessionSummary {
   total: number;
   bestStreak: number;
   xpEarned: number;
+  coinsEarned: number;
   perfect: boolean;
   lifelinesUsed: number;
   levelUps: number[];
@@ -97,4 +99,7 @@ export type RootStackParamList = {
     newBadges: string[];
   };
   Achievements: undefined;
+  LevelSelect: undefined;
+  RoyalElephant: { level?: number } | undefined;
 };
+

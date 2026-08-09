@@ -26,6 +26,9 @@
       "backgroundColor": "#081B38",
       "bundler": "metro"
     },
-    "plugins": []
+    "plugins": [
+      "expo-splash-screen",
+      "expo-asset"
+    ]
   }
 }

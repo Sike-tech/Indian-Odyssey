@@ -6,6 +6,8 @@ import HomeScreen from '../screens/HomeScreen';
 import QuizScreen from '../screens/QuizScreen';
 import ResultScreen from '../screens/ResultScreen';
 import AchievementsScreen from '../screens/AchievementsScreen';
+import LevelSelectScreen from '../games/royal-elephant/screens/LevelSelectScreen';
+import RoyalElephantScreen from '../games/royal-elephant/screens/RoyalElephantScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -23,6 +25,8 @@ export default function AppNavigator() {
         <Stack.Screen name="Quiz" component={QuizScreen} />
         <Stack.Screen name="Result" component={ResultScreen} />
         <Stack.Screen name="Achievements" component={AchievementsScreen} />
+        <Stack.Screen name="LevelSelect" component={LevelSelectScreen} />
+        <Stack.Screen name="RoyalElephant" component={RoyalElephantScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

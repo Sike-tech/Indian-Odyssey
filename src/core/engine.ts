@@ -4,10 +4,11 @@ import { checkNewAchievements } from '../data/achievements';
 import { PlayerProfile } from './player';
 
 export const QUESTIONS_PER_GAME = 10;
-export const FIFTY_FIFTY_USES = 2;
-export const SKIP_USES = 2;
 export const STREAK_STEP = 0.1;
 export const STREAK_CAP = 10;
+export const COINS_PER_CORRECT = 25;
+export const FIFTY_FIFTY_COST = 50;
+export const SKIP_COST = 100;
 
 export class QuizSession {
   profile: PlayerProfile;
@@ -23,8 +24,8 @@ export class QuizSession {
   streak = 0;
   bestStreak = 0;
   xpEarned = 0;
+  coinsEarned = 0;
   levelUps: number[] = [];
-  lifelines = { fifty: FIFTY_FIFTY_USES, skip: SKIP_USES };
 
   private currentOptions: string[] = [];
   private currentCorrect = 0;
@@ -87,22 +88,22 @@ export class QuizSession {
     };
   }
 
-  answer(optionIndex: number): AnswerResult {
+  answer(optionIndex: number, timedOut = false): AnswerResult {
     if (this.finished || this.answeredCurrent) {
       throw new Error('No active question to answer');
     }
-    if (this.fiftyRemoved.has(optionIndex)) {
+    if (!timedOut && this.fiftyRemoved.has(optionIndex)) {
       throw new Error('Option was removed by 50:50');
     }
 
     this.answeredCurrent = true;
     const raw = this.currentRaw!;
-    const isCorrect = optionIndex === this.currentCorrect;
+    const isCorrect = !timedOut && optionIndex === this.currentCorrect;
     this.answered += 1;
     let xp = 0;
     const gainedLevels: number[] = [];
 
-    if (isCorrect) {
+    if (isCorrect && !timedOut) {
       this.correctCount += 1;
       this.streak += 1;
       this.bestStreak = Math.max(this.bestStreak, this.streak);
@@ -110,7 +111,9 @@ export class QuizSession {
       const mult = 1 + STREAK_STEP * Math.min(this.streak - 1, STREAK_CAP);
       xp = Math.round(base * mult);
       const { oldLevel, newLevel } = this.profile.addXp(xp);
+      this.profile.addCoins(COINS_PER_CORRECT);
       this.xpEarned += xp;
+      this.coinsEarned += COINS_PER_CORRECT;
       if (newLevel > oldLevel) {
         for (let l = oldLevel + 1; l <= newLevel; l += 1) {
           gainedLevels.push(l);
@@ -143,8 +146,8 @@ export class QuizSession {
     if (this.fiftyUsedHere) {
       throw new Error('50:50 already used on this question');
     }
-    if (this.lifelines.fifty <= 0) {
-      throw new Error('No 50:50 lifelines left');
+    if (this.profile.coins < FIFTY_FIFTY_COST) {
+      throw new Error('Not enough coins (need 50)');
     }
 
     const wrong = Array.from({ length: 4 }, (_, i) => i).filter(
@@ -153,7 +156,7 @@ export class QuizSession {
     const removed = shuffle(wrong, this.rng).slice(0, 2).sort((a, b) => a - b);
     removed.forEach((i) => this.fiftyRemoved.add(i));
     this.fiftyUsedHere = true;
-    this.lifelines.fifty -= 1;
+    this.profile.addCoins(-FIFTY_FIFTY_COST);
     return removed;
   }
 
@@ -161,20 +164,16 @@ export class QuizSession {
     if (this.answeredCurrent || this.finished) {
       throw new Error('Cannot skip now');
     }
-    if (this.lifelines.skip <= 0) {
-      throw new Error('No skip lifelines left');
+    if (this.profile.coins < SKIP_COST) {
+      throw new Error('Not enough coins (need 100)');
     }
-    this.lifelines.skip -= 1;
+    this.profile.addCoins(-SKIP_COST);
     this.skippedCount += 1;
     this.index += 1;
   }
 
   get lifelinesUsed(): number {
-    return (
-      FIFTY_FIFTY_USES -
-      this.lifelines.fifty +
-      (SKIP_USES - this.lifelines.skip)
-    );
+    return 0;
   }
 
   summary(): SessionSummary {
@@ -187,6 +186,7 @@ export class QuizSession {
       total: this.total,
       bestStreak: this.bestStreak,
       xpEarned: this.xpEarned,
+      coinsEarned: this.coinsEarned,
       perfect: this.perfect,
       lifelinesUsed: this.lifelinesUsed,
       levelUps: [...this.levelUps],

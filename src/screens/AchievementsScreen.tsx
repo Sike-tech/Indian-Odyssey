@@ -156,7 +156,7 @@ export default function AchievementsScreen() {
         <View className="flex-row items-center px-5 pt-3 pb-4">
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => navigation.replace('Home')}
+            onPress={() => navigation.goBack()}
             className="flex-row items-center"
           >
             <Icon name="arrow-left" size={24} color="#D4AF37" />
