@@ -34,11 +34,13 @@ export default function App() {
   });
 
   useEffect(() => {
-    Asset.loadAsync(ASSETS).then(() => {
-      if (fontsLoaded) {
-        SplashScreen.hideAsync();
-      }
-    });
+    Asset.loadAsync(ASSETS).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
   }, [fontsLoaded]);
 
   if (!fontsLoaded) return null;
