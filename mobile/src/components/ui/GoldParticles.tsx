@@ -99,6 +99,8 @@ function GoldParticle({ particle, screenH, scale }: { particle: Particle; screen
 
     const fallCycle = () => {
       particle.y.setValue(-30);
+      hiddenRef.current = false;
+      particle.opacity.setValue(particle.baseOpacity);
       Animated.timing(particle.y, {
         toValue: screenH + 30,
         duration: fallDuration,
