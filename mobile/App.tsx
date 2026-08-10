@@ -7,7 +7,6 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { ProfileProvider } from './src/hooks/useProfile';
 import AppNavigator from './src/navigation/AppNavigator';
-import { preloadAssets } from './src/core/preload';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -17,10 +16,6 @@ export default function App() {
     'Cinzel': require('./assets/Cinzel Family/Cinzel/Cinzel-Regular.ttf'),
     'Cinzel-Black': require('./assets/Cinzel Family/Cinzel/Cinzel-Black.ttf'),
   });
-
-  useEffect(() => {
-    preloadAssets();
-  }, []);
 
   useEffect(() => {
     if (fontsLoaded) {
