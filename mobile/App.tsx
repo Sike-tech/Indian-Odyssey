@@ -12,9 +12,9 @@ SplashScreen.preventAutoHideAsync();
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    'Cinzel-Bold': require('./assets/Cinzel Family/Cinzel/Cinzel-Bold.ttf'),
-    'Cinzel': require('./assets/Cinzel Family/Cinzel/Cinzel-Regular.ttf'),
-    'Cinzel-Black': require('./assets/Cinzel Family/Cinzel/Cinzel-Black.ttf'),
+    'Cinzel-Bold': require('./assets/fonts/Cinzel Family/Cinzel/Cinzel-Bold.ttf'),
+    'Cinzel': require('./assets/fonts/Cinzel Family/Cinzel/Cinzel-Regular.ttf'),
+    'Cinzel-Black': require('./assets/fonts/Cinzel Family/Cinzel/Cinzel-Black.ttf'),
   });
 
   useEffect(() => {

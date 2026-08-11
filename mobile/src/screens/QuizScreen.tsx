@@ -329,7 +329,7 @@ export default function QuizScreen() {
               fontFamily: 'Georgia',
               fontSize: Math.min(33, 32 * s),
               fontWeight: 'bold',
-              color: '#D4AF37',
+              color: '#FCBA03',
               textShadowColor: 'rgba(0, 0, 0, 0.6)',
               textShadowOffset: { width: 1, height: 2 },
               textShadowRadius: 3,
@@ -375,7 +375,7 @@ export default function QuizScreen() {
             style={{
               position: 'absolute',
               left: QUESTION_BOX.x * s,
-              top: QUESTION_BOX.y * s,
+              top: QUESTION_BOX.y * s + 20,
               width: QUESTION_BOX.w * s,
               height: QUESTION_BOX.h * s,
               overflow: 'hidden',
@@ -519,6 +519,7 @@ export default function QuizScreen() {
                   alignItems: 'flex-start',
                   justifyContent: 'center',
                   paddingHorizontal: 14 * s,
+                  paddingTop: 10 * s + 4,
                 }}
               >
                 <Text

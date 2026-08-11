@@ -30,7 +30,7 @@ export const SETTINGS_ICON = { cx: 751, cy: 54, r: 28 };
 export const BACK_BUTTON = { cx: 118, cy: 376, r: 46 };
 
 /** Category badge — ornate frame near the top */
-export const CATEGORY_BADGE = { x: 261, y: 326, w: 331, h: 95 };
+export const CATEGORY_BADGE = { x: 265, y: 298, w: 331, h: 95 };
 
 /** Progress indicator — small frame top-right */
 export const PROGRESS = { x: 619, y: 228, w: 103, h: 63 };
@@ -41,16 +41,16 @@ export const QUESTION_BOX = { x: 91, y: 514, w: 671, h: 395 };
 // --- Answer options ---
 
 /** Answer option A — decorative frame */
-export const ANSWER_A = { x: 192, y: 977, w: 525, h: 93 };
+export const ANSWER_A = { x: 183, y: 983, w: 525, h: 91 };
 
 /** Answer option B — decorative frame */
-export const ANSWER_B = { x: 192, y: 1091, w: 525, h: 93 };
+export const ANSWER_B = { x: 183, y: 1091, w: 525, h: 91 };
 
 /** Answer option C — decorative frame */
-export const ANSWER_C = { x: 192, y: 1205, w: 525, h: 93 };
+export const ANSWER_C = { x: 183, y: 1196, w: 525, h: 91 };
 
 /** Answer option D — decorative frame */
-export const ANSWER_D = { x: 192, y: 1316, w: 525, h: 93 };
+export const ANSWER_D = { x: 183, y: 1292, w: 525, h: 91 };
 
 /** Select buttons — invisible buttons to the left of each option */
 export const SELECT_A = { x: 101, y: 973, w: 90, h: 90 };
