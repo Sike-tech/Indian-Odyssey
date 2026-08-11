@@ -373,9 +373,9 @@ export default function QuizScreen() {
           <View
             style={{
               position: 'absolute',
-              left: QUESTION_BOX.x * s,
+              left: QUESTION_BOX.x * s + 8,
               top: QUESTION_BOX.y * s + 20,
-              width: QUESTION_BOX.w * s,
+              width: QUESTION_BOX.w * s - 16,
               height: QUESTION_BOX.h * s,
               overflow: 'hidden',
             }}
@@ -392,8 +392,8 @@ export default function QuizScreen() {
           >
             <Text
               style={{
-              fontFamily: 'Cinzel-Bold',
-                fontSize: Math.min(39, 36 * s),
+              fontFamily: 'Constantine',
+                fontSize: Math.min(45, 45 * s),
                 textAlign: 'center',
                 lineHeight: 30,
                 color: 'rgba(212, 175, 55, 0.9)',
