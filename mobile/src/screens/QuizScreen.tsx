@@ -189,6 +189,7 @@ export default function QuizScreen() {
       finishGame();
       return;
     }
+    setTimeLeft(60);
     setResult(null);
     setSelected(null);
     setRemoved(new Set());
@@ -264,9 +265,8 @@ export default function QuizScreen() {
         >
           <Text
             style={{
-              fontFamily: 'Cinzel',
-              fontSize: Math.min(30, 28 * s),
-              fontWeight: 'bold',
+              fontFamily: 'Eaglore',
+              fontSize: Math.min(35, 35 * s),
               color: '#D4AF37',
               textShadowColor: 'rgba(0, 0, 0, 0.5)',
               textShadowOffset: { width: 1, height: 1 },
@@ -286,8 +286,8 @@ export default function QuizScreen() {
         <View
           style={{
             position: 'absolute',
-            left: (58 - 15) * s,
-            top: (CATEGORY_BADGE.y + 3 + 3) * s,
+            left: (58 - 17) * s,
+            top: (CATEGORY_BADGE.y + 8) * s,
             width: 150 * s,
             height: CATEGORY_BADGE.h * s,
             alignItems: 'center',
@@ -296,9 +296,9 @@ export default function QuizScreen() {
         >
           <Text
             style={{
-              fontFamily: 'Georgia',
-              fontSize: Math.min(45, 42 * s),
-              color: timeLeft <= 10 ? '#ef4444' : '#D4AF37',
+              fontFamily: 'Eaglore',
+              fontSize: Math.min(70, 70 * s),
+              color: timeLeft <= 10 ? 'rgba(239, 68, 68, 0.8)' : 'rgba(212, 175, 55, 0.8)',
               textShadowColor: 'rgba(0, 0, 0, 0.5)',
               textShadowOffset: { width: 1, height: 1 },
               textShadowRadius: 2,
@@ -326,10 +326,9 @@ export default function QuizScreen() {
         <View style={r(CATEGORY_BADGE)} className="items-center justify-center">
           <Text
             style={{
-              fontFamily: 'Georgia',
-              fontSize: Math.min(33, 32 * s),
-              fontWeight: 'bold',
-              color: '#FCBA03',
+              fontFamily: 'Eaglore',
+              fontSize: Math.min(60, 60 * s),
+              color: 'rgba(212, 175, 55, 0.8)',
               textShadowColor: 'rgba(0, 0, 0, 0.6)',
               textShadowOffset: { width: 1, height: 2 },
               textShadowRadius: 3,
@@ -347,8 +346,8 @@ export default function QuizScreen() {
         <View
           style={{
             position: 'absolute',
-            left: (CATEGORY_BADGE.x + CATEGORY_BADGE.w + 102) * s,
-            top: (CATEGORY_BADGE.y + 3) * s,
+            left: (CATEGORY_BADGE.x + CATEGORY_BADGE.w + 115) * s,
+            top: (CATEGORY_BADGE.y + 5) * s,
             width: 60 * s,
             height: CATEGORY_BADGE.h * s,
             alignItems: 'center',
@@ -357,9 +356,9 @@ export default function QuizScreen() {
         >
           <Text
             style={{
-              fontFamily: 'Georgia',
-              fontSize: Math.min(30, 28 * s),
-              color: '#D4AF37',
+              fontFamily: 'Eaglore',
+              fontSize: Math.min(45, 45 * s),
+              color: 'rgba(212, 175, 55, 0.8)',
               textShadowColor: 'rgba(0, 0, 0, 0.5)',
               textShadowOffset: { width: 1, height: 1 },
               textShadowRadius: 2,
@@ -393,12 +392,12 @@ export default function QuizScreen() {
           >
             <Text
               style={{
-              fontFamily: 'Cinzel',
+              fontFamily: 'Cinzel-Bold',
                 fontSize: Math.min(39, 36 * s),
                 textAlign: 'center',
                 lineHeight: 30,
-                color: '#FFEA00',
-                textShadowColor: 'rgba(0, 0, 0, 0.6)',
+                color: 'rgba(212, 175, 55, 0.9)',
+                textShadowColor: 'rgba(0, 0, 0, 1)',
                 textShadowOffset: { width: 1, height: 2 },
                 textShadowRadius: 3,
                 letterSpacing: 0.5,
@@ -590,13 +589,12 @@ export default function QuizScreen() {
           <View className="flex-1 items-center justify-center">
             <Text
               style={{
-                fontFamily: 'Georgia',
-                fontSize: Math.min(36, 35 * s),
-                fontWeight: 'bold',
+                fontFamily: 'Eaglore',
+                fontSize: Math.min(60, 60 * s),
                 color: result
-                  ? '#D4AF37'
+                  ? 'rgba(212, 175, 55, 0.8)'
                   : selected !== null
-                  ? '#D4AF37'
+                  ? 'rgba(212, 175, 55, 0.8)'
                   : 'rgba(255,255,255,0.25)',
                 textShadowColor: 'rgba(0, 0, 0, 0.5)',
                 textShadowOffset: { width: 1, height: 1 },
@@ -613,47 +611,42 @@ export default function QuizScreen() {
 
         {/* XP/Coins preview — bottom panel */}
         {!result && (
-          <View
-            style={{
-              position: 'absolute',
-              left: XP_PANEL.x * s - 7,
-              top: XP_PANEL.y * s + 17,
-              width: XP_PANEL.w * s,
-              height: XP_PANEL.h * s,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-around',
-            }}
-          >
-            <View style={{ alignItems: 'center' }}>
-              <Text
-                style={{
-                  fontFamily: 'Georgia',
-                  fontSize: Math.min(49, 45 * s),
-                  color: 'rgba(212, 175, 55, 1)',
-                  textShadowColor: 'rgba(0, 0, 0, 0.4)',
-                  textShadowOffset: { width: 1, height: 1 },
-                  textShadowRadius: 2,
-                }}
-              >
-                +{previewXp} XP
-              </Text>
-            </View>
-            <View style={{ alignItems: 'center' }}>
-              <Text
-                style={{
-                  fontFamily: 'Georgia',
-                  fontSize: Math.min(22, 20 * s),
-                  color: 'rgba(212, 175, 55, 0.6)',
-                  textShadowColor: 'rgba(0, 0, 0, 0.4)',
-                  textShadowOffset: { width: 1, height: 1 },
-                  textShadowRadius: 2,
-                }}
-              >
-                +25 Coins
-              </Text>
-            </View>
-          </View>
+          <>
+            <Text
+              style={{
+                position: 'absolute',
+                left: XP_PANEL.x * s,
+                top: (XP_PANEL.y + 73) * s,
+                width: (XP_PANEL.w / 2) * s,
+                fontFamily: 'Georgia',
+                fontSize: Math.min(40, 40 * s),
+                color: 'rgba(212, 175, 55, 0.9)',
+                textAlign: 'center',
+                textShadowColor: 'rgba(0, 0, 0, 0.4)',
+                textShadowOffset: { width: 1, height: 1 },
+                textShadowRadius: 2,
+              }}
+            >
+              +{previewXp} XP
+            </Text>
+            <Text
+              style={{
+                position: 'absolute',
+                left: (XP_PANEL.x + XP_PANEL.w / 2) * s + 27,
+                top: (XP_PANEL.y + 73) * s,
+                width: (XP_PANEL.w / 2) * s,
+                fontFamily: 'Georgia',
+                fontSize: Math.min(40, 40 * s),
+                color: 'rgba(212, 175, 55, 0.9)',
+                textAlign: 'center',
+                textShadowColor: 'rgba(0, 0, 0, 0.4)',
+                textShadowOffset: { width: 1, height: 1 },
+                textShadowRadius: 2,
+              }}
+            >
+              +25 AU
+            </Text>
+          </>
         )}
 
         </View>{/* end shifted container */}

@@ -96,12 +96,12 @@ export function VictoryDialog({
           <Text style={{
             position: 'absolute',
             top: 496 * s,
-            left: 443 * s,
+            left: 460 * s,
             fontFamily: 'Georgia',
             fontSize: 30 * s,
             color: 'rgba(212, 175, 55, 0.8)',
           }}>
-            +{coinsEarned} Coins
+            +{coinsEarned} AU
           </Text>
 
           {/* Lotuses collected */}

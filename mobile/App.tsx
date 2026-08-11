@@ -15,6 +15,9 @@ export default function App() {
     'Cinzel-Bold': require('./assets/fonts/Cinzel Family/Cinzel/Cinzel-Bold.ttf'),
     'Cinzel': require('./assets/fonts/Cinzel Family/Cinzel/Cinzel-Regular.ttf'),
     'Cinzel-Black': require('./assets/fonts/Cinzel Family/Cinzel/Cinzel-Black.ttf'),
+    'Eaglore': require('./assets/fonts/eaglore/Eaglore.otf'),
+    'Eroded': require('./assets/fonts/eroded-personal-use/ERODED PERSONAL USE.ttf'),
+    'Gomarice': require('./assets/fonts/gomarice/gomarice_tall_block.ttf'),
   });
 
   useEffect(() => {
