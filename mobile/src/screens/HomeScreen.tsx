@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Animated, View, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { Animated, ScrollView, View, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
@@ -96,7 +96,7 @@ export default function HomeScreen() {
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#081B3A' }}>
+    <ScrollView style={{ flex: 1, backgroundColor: '#081B3A' }} contentContainerStyle={{ minHeight: imgHeight }}>
       <Image
         source={require('../../assets/home-page.png')}
         style={{ width: screenWidth, height: imgHeight }}
@@ -146,6 +146,6 @@ export default function HomeScreen() {
       {NAV_BUTTONS.map((btn) => (
         <View key={btn.id} style={circleStyle(btn.x, btn.y, btn.w)} />
       ))}
-    </View>
+    </ScrollView>
   );
 }
